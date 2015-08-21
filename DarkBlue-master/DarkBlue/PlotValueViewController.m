@@ -34,6 +34,7 @@
     readState = false;
     data = [[NSMutableArray alloc] init];
     rawData = [[NSMutableArray alloc] init];
+    timeData = [[NSMutableArray alloc] init];
     
     CGRect frame;
     frame.origin.x = 17;
@@ -222,7 +223,47 @@
 
 - (void) stopDataAcquisition {
     [mytimer invalidate];
+    [self saveData];
     [data removeAllObjects];
+    [timeData removeAllObjects];
+}
+
+- (void) saveData {
+    NSMutableString *csv = [NSMutableString stringWithString:@"Time,Reading"];
+    
+    NSUInteger count = [data count];
+    // provided all arrays are of the same length
+    for (NSUInteger i=0; i<count; i++ ) {
+        [csv appendFormat:@"\n %@,\"%d\"",
+         [timeData objectAtIndex:i],
+         [[data objectAtIndex:i] intValue]
+         ];
+        // instead of integerValue may be used intValue or other, it depends how array was created
+    }
+    
+    currentTime = [NSDate date];
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setDateFormat:@"YY-MM-dd-hh-mm-ss"];
+    NSString *resultString = [dateFormatter stringFromDate: currentTime];
+    NSString *filePath = [self findFolderDir:@"dataFolder"];
+    NSString *fileName = [NSString stringWithFormat:@"%@/%@-Data.csv",filePath,resultString];
+
+    NSLog(@"%@",fileName);
+    NSError *error;
+    BOOL res = [csv writeToFile:fileName atomically:YES encoding:NSUTF8StringEncoding error:&error];
+    
+    if (!res) {
+        NSLog(@"Error %@ while writing to file %@", [error localizedDescription], fileName );
+    }
+
+}
+
+- (NSString*) findFolderDir: (NSString *) folderName {
+    NSString *documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+    NSString *dataDir = [documentsDirectory stringByAppendingPathComponent:folderName];
+    if (![[NSFileManager defaultManager] fileExistsAtPath:dataDir])
+        [[NSFileManager defaultManager] createDirectoryAtPath:dataDir withIntermediateDirectories:NO attributes:nil error:nil];
+    return dataDir;
 }
 
 - (void) startSensor {
@@ -238,6 +279,12 @@
     NSLog(@"avg = %@", [rawData valueForKeyPath:@"@avg.intValue"]);
     sensorValue.text = [NSString stringWithFormat:@"%@", [rawData valueForKeyPath:@"@avg.intValue"]];
     [data addObject:[rawData valueForKeyPath:@"@avg.intValue"]];
+    
+    currentTime = [NSDate date];
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setDateFormat:@"YY-MM-dd-hh-mm-ss"];
+    NSString *resultString = [dateFormatter stringFromDate: currentTime];
+    [timeData addObject:resultString];
     
     int count = [data count];
     int maxValue = [[data valueForKeyPath:@"@max.intValue"] intValue];

@@ -15,7 +15,9 @@
     __weak IBOutlet UILabel *sensorValue;
     NSMutableArray *data;
     NSMutableArray *rawData;
+    NSMutableArray *timeData;
     NSTimer *mytimer;
+    NSDate *currentTime;
 }
 @property (weak, nonatomic) IBOutlet UIButton *startButton;
 @property (weak, nonatomic) IBOutlet UITextField *samplingInterval;
